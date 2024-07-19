@@ -1,0 +1,10 @@
+{{- $field := index .FormData.FieldTypes .Key }}
+{{- $fieldType := $field.Type.String }}
+{{- $error := index .FormData.Errors .Key }}
+{{- $value := index .FormData.Values .Key }}
+{{- $label := $field.Tag.Get "label" }}
+<label for="{{ .Key }}">{{ if ne $label "" }}{{ $label }}{{ else }}{{ $field.Name }}{{ end }}</label>
+<input type="text" name="{{ .Key }}" value="{{ $value }}">
+{{- if $error }}
+<div class="error">{{ $error }}</div>
+{{- end }}

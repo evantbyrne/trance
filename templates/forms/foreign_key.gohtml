@@ -1,0 +1,20 @@
+{{/* TODO: Proper primary key handling in foreign keys. */}}
+{{- $field := index .FormData.FieldTypes .Key }}
+{{- $fieldType := $field.Type.String }}
+{{- $error := index .FormData.Errors .Key }}
+{{- $value := index .FormData.Values .Key }}
+{{- $label := $field.Tag.Get "label" }}
+{{ $vv := index .FormData.ValuesMap .Key }}
+{{ $options := (($vv.Query).All).Collect }}
+<label for="{{ .Key }}">{{ if ne $label "" }}{{ $label }}{{ else }}{{ $field.Name }}{{ end }}</label>
+<select name="{{ .Key }}">
+{{- if (hasPrefix $fieldType "trance.NullForeignKey[") }}
+	<option value="">-- Select one --</option>
+{{- end }}
+{{ range $options }}
+	<option value="{{ .Id }}"{{ if (and $vv.Valid (eq .Id $vv.Row.Id)) }} selected{{ end }}>{{ . }}</option>
+{{ end }}
+</select>
+{{- if $error }}
+<div class="error">{{ $error }}</div>
+{{- end }}
