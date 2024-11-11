@@ -28,6 +28,10 @@ type DialectStringerWithArgs interface {
 
 var defaultDialect Dialect
 
+func GetDialect() Dialect {
+	return defaultDialect
+}
+
 func SetDialect(dialect Dialect) {
 	defaultDialect = dialect
 }
