@@ -5,9 +5,9 @@ import (
 )
 
 type WeaveListStreamer[T any] struct {
-	Error        error
-	Values       []*T
-	WeaveConfigs []WeaveConfig
+	Error       error
+	Values      []*T
+	WeaveConfig WeaveConfig
 }
 
 func (stream *WeaveListStreamer[T]) Collect() ([]*T, error) {
@@ -16,8 +16,8 @@ func (stream *WeaveListStreamer[T]) Collect() ([]*T, error) {
 
 func (stream *WeaveListStreamer[T]) First() *WeaveStreamer[T] {
 	result := &WeaveStreamer[T]{
-		Error:        stream.Error,
-		WeaveConfigs: stream.WeaveConfigs,
+		Error:       stream.Error,
+		WeaveConfig: stream.WeaveConfig,
 	}
 	if result.Error == nil {
 		if len(stream.Values) > 0 {
@@ -43,7 +43,7 @@ func (stream *WeaveListStreamer[T]) Guard(ctx context.Context) *MapListStream {
 		Error: stream.Error,
 	}
 	if result.Error == nil {
-		result.Values, result.Error = GuardList(ctx, stream.Values, stream.WeaveConfigs...)
+		result.Values, result.Error = GuardList(ctx, stream.Values, stream.WeaveConfig)
 	}
 	return result
 }
@@ -53,7 +53,7 @@ func (stream *WeaveListStreamer[T]) JSON() *JSONStreamer {
 		Error: stream.Error,
 	}
 	if result.Error == nil {
-		weave := Use[T](stream.WeaveConfigs...)
+		weave := UseWith[T](stream.WeaveConfig)
 		values := make([]map[string]any, 0)
 		for _, row := range stream.Values {
 			values = append(values, weave.ToJsonMap(row))
@@ -81,8 +81,8 @@ func (stream *WeaveListStreamer[T]) OnError(callback func(error) error) *WeaveLi
 
 func (stream *WeaveListStreamer[T]) Reduce(callback func(i int, value *T, acc *T) (*T, error)) *WeaveStreamer[T] {
 	result := &WeaveStreamer[T]{
-		Error:        stream.Error,
-		WeaveConfigs: stream.WeaveConfigs,
+		Error:       stream.Error,
+		WeaveConfig: stream.WeaveConfig,
 	}
 	i := 0
 	for result.Error == nil && i < len(stream.Values) {

@@ -51,9 +51,9 @@ func TestBuildDelete(t *testing.T) {
 	defer trance.PurgeWeaves()
 
 	dialect := PqDialect{}
-	weave := trance.Use[testModel](trance.WeaveConfig{NoCache: true})
+	weave := trance.UseWith[testModel](trance.WeaveConfig{NoCache: true})
 
-	config := trance.Query[testModel](trance.WeaveConfig{NoCache: true}).Config
+	config := trance.QueryWith[testModel](trance.WeaveConfig{NoCache: true}).Config
 	config.Fields = weave.Fields
 	config.Table = "testmodel"
 	expectedArgs := []any{}
@@ -70,7 +70,7 @@ func TestBuildDelete(t *testing.T) {
 	}
 
 	// WHERE
-	config = trance.Query[testModel](trance.WeaveConfig{NoCache: true}).Filter("test_id", "=", 1).Config
+	config = trance.QueryWith[testModel](trance.WeaveConfig{NoCache: true}).Filter("test_id", "=", 1).Config
 	config.Fields = weave.Fields
 	config.Table = "testmodel"
 	expectedArgs = []any{1}
@@ -96,9 +96,9 @@ func TestBuildInsert(t *testing.T) {
 	defer trance.PurgeWeaves()
 
 	dialect := PqDialect{}
-	weave := trance.Use[testModel](trance.WeaveConfig{NoCache: true})
+	weave := trance.UseWith[testModel](trance.WeaveConfig{NoCache: true})
 
-	config := trance.Query[testModel](trance.WeaveConfig{NoCache: true}).Config
+	config := trance.QueryWith[testModel](trance.WeaveConfig{NoCache: true}).Config
 	config.Fields = weave.Fields
 	config.Table = "testmodel"
 	expectedArgs := []any{"foo", "bar"}
@@ -127,9 +127,9 @@ func TestBuildSelect(t *testing.T) {
 	defer trance.PurgeWeaves()
 
 	dialect := PqDialect{}
-	weave := trance.Use[testModel](trance.WeaveConfig{NoCache: true})
+	weave := trance.UseWith[testModel](trance.WeaveConfig{NoCache: true})
 
-	config := trance.Query[testModel](trance.WeaveConfig{NoCache: true}).Config
+	config := trance.QueryWith[testModel](trance.WeaveConfig{NoCache: true}).Config
 	config.Fields = weave.Fields
 	config.Table = "testmodel"
 	expectedArgs := []any{}
@@ -146,7 +146,7 @@ func TestBuildSelect(t *testing.T) {
 	}
 
 	// SELECT
-	config = trance.Query[testModel](trance.WeaveConfig{NoCache: true}).Select("id", "value1", trance.Unsafe(`count(1) as "count"`), trance.As("value2", "value3")).Config
+	config = trance.QueryWith[testModel](trance.WeaveConfig{NoCache: true}).Select("id", "value1", trance.Unsafe(`count(1) as "count"`), trance.As("value2", "value3")).Config
 	config.Fields = weave.Fields
 	config.Table = "testmodel"
 	expectedArgs = []any{}
@@ -163,7 +163,7 @@ func TestBuildSelect(t *testing.T) {
 	}
 
 	// WHERE
-	config = trance.Query[testModel](trance.WeaveConfig{NoCache: true}).Filter("id", "=", 1).Config
+	config = trance.QueryWith[testModel](trance.WeaveConfig{NoCache: true}).Filter("id", "=", 1).Config
 	config.Fields = weave.Fields
 	config.Table = "testmodel"
 	expectedArgs = []any{1}
@@ -179,7 +179,7 @@ func TestBuildSelect(t *testing.T) {
 		t.Errorf("Expected '%s', got '%s'", expectedArgs, args)
 	}
 
-	config = trance.Query[testModel](trance.WeaveConfig{NoCache: true}).Filter("id", "IN", trance.Sql(trance.Param(1), ",", trance.Param(2))).Config
+	config = trance.QueryWith[testModel](trance.WeaveConfig{NoCache: true}).Filter("id", "IN", trance.Sql(trance.Param(1), ",", trance.Param(2))).Config
 	config.Fields = weave.Fields
 	config.Table = "testmodel"
 	expectedArgs = []any{1, 2}
@@ -196,7 +196,7 @@ func TestBuildSelect(t *testing.T) {
 	}
 
 	// JOIN
-	config = trance.Query[testModel](trance.WeaveConfig{NoCache: true}).Select(trance.Unsafe("*")).Join("groups", trance.Or(
+	config = trance.QueryWith[testModel](trance.WeaveConfig{NoCache: true}).Select(trance.Unsafe("*")).Join("groups", trance.Or(
 		trance.Q("groups.id", "=", trance.Column("accounts.group_id")),
 		trance.Q("groups.id", "IS", nil))).Config
 	config.Fields = weave.Fields
@@ -215,7 +215,7 @@ func TestBuildSelect(t *testing.T) {
 	}
 
 	// SORT
-	config = trance.Query[testModel](trance.WeaveConfig{NoCache: true}).Sort("test_id", "-test_value_1").Config
+	config = trance.QueryWith[testModel](trance.WeaveConfig{NoCache: true}).Sort("test_id", "-test_value_1").Config
 	config.Fields = weave.Fields
 	config.Table = "testmodel"
 	expectedArgs = []any{}
@@ -232,7 +232,7 @@ func TestBuildSelect(t *testing.T) {
 	}
 
 	// LIMIT and OFFSET
-	config = trance.Query[testModel](trance.WeaveConfig{NoCache: true}).Filter("id", "=", 1).Offset(20).Limit(10).Config
+	config = trance.QueryWith[testModel](trance.WeaveConfig{NoCache: true}).Filter("id", "=", 1).Offset(20).Limit(10).Config
 	config.Fields = weave.Fields
 	config.Table = "testmodel"
 	expectedArgs = []any{1, 10, 20}
@@ -256,7 +256,7 @@ func TestBuildTableColumnAdd(t *testing.T) {
 	defer trance.PurgeWeaves()
 
 	dialect := PqDialect{}
-	weave := trance.Use[testModel](trance.WeaveConfig{NoCache: true})
+	weave := trance.UseWith[testModel](trance.WeaveConfig{NoCache: true})
 	config := trance.QueryConfig{
 		Fields: weave.Fields,
 		Table:  "testmodel",
@@ -292,7 +292,7 @@ func TestBuildTableCreate(t *testing.T) {
 	defer trance.PurgeWeaves()
 
 	dialect := PqDialect{}
-	weave := trance.Use[testModel](trance.WeaveConfig{NoCache: true})
+	weave := trance.UseWith[testModel](trance.WeaveConfig{NoCache: true})
 	config := trance.QueryConfig{
 		Fields: weave.Fields,
 		Table:  "testmodel",
@@ -353,7 +353,7 @@ func TestBuildUpdate(t *testing.T) {
 	defer trance.PurgeWeaves()
 
 	dialect := PqDialect{}
-	query := trance.Query[testModel](trance.WeaveConfig{NoCache: true})
+	query := trance.QueryWith[testModel](trance.WeaveConfig{NoCache: true})
 	config := query.Filter("test_id", "=", 1).Config
 	config.Fields = query.Weave.Fields
 	config.Table = "testmodel"
@@ -441,7 +441,7 @@ func TestColumnType(t *testing.T) {
 	}
 
 	dialect := PqDialect{}
-	weave := trance.Use[testModel](trance.WeaveConfig{NoCache: true})
+	weave := trance.UseWith[testModel](trance.WeaveConfig{NoCache: true})
 	fieldKeys := maps.Keys(weave.Fields)
 	sort.Strings(fieldKeys)
 

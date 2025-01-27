@@ -467,7 +467,12 @@ func Guard[T any](ctx context.Context, record *T, configs ...WeaveConfig) (map[s
 			}
 		}
 
-		weave := Use[T](configs...)
+		var weave *Weave[T]
+		if len(configs) > 0 {
+			weave = UseWith[T](configs[0])
+		} else {
+			weave = Use[T]()
+		}
 		_, fieldsLower := viewFields(weave, view)
 
 		// Generate a map of fields to views.
@@ -497,7 +502,12 @@ func GuardList[T any](ctx context.Context, records []*T, configs ...WeaveConfig)
 				}
 			}
 
-			weave := Use[T](configs...)
+			var weave *Weave[T]
+			if len(configs) > 0 {
+				weave = UseWith[T](configs[0])
+			} else {
+				weave = Use[T]()
+			}
 			_, fieldsLower := viewFields(weave, view)
 
 			// Generate a map of fields to views.

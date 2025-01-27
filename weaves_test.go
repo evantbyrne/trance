@@ -23,7 +23,7 @@ func TestModelScanMap(t *testing.T) {
 		Name     string                     `@:"name"`
 	}
 	defer PurgeWeaves()
-	model := Use[testAccounts](WeaveConfig{NoCache: true})
+	model := UseWith[testAccounts](WeaveConfig{NoCache: true})
 
 	data := []map[string]any{
 		{
@@ -135,7 +135,7 @@ func TestModelToJsonMap(t *testing.T) {
 		PurgeWeaves()
 	}()
 	PurgeWeaves()
-	model := Use[testAccountsModelToMap](WeaveConfig{NoCache: true})
+	model := UseWith[testAccountsModelToMap](WeaveConfig{NoCache: true})
 
 	rows := []testAccountsModelToMap{
 		{
@@ -194,7 +194,7 @@ func TestModelToJsonMap(t *testing.T) {
 		assertMapDeepEquals(t, actual, expected[i])
 	}
 
-	groupsModel := Use[testGroupsModelToMap](WeaveConfig{NoCache: true})
+	groupsModel := UseWith[testGroupsModelToMap](WeaveConfig{NoCache: true})
 	groups := []testGroupsModelToMap{
 		{
 			Id:   1,
@@ -228,7 +228,7 @@ func TestModelToMap(t *testing.T) {
 		PurgeWeaves()
 	}()
 	PurgeWeaves()
-	model := Use[testAccountsModelToMap](WeaveConfig{NoCache: true})
+	model := UseWith[testAccountsModelToMap](WeaveConfig{NoCache: true})
 
 	rows := []testAccountsModelToMap{
 		{
@@ -283,7 +283,7 @@ func TestModelToMap(t *testing.T) {
 		}
 	}
 
-	groupsModel := Use[testGroupsModelToMap](WeaveConfig{NoCache: true})
+	groupsModel := UseWith[testGroupsModelToMap](WeaveConfig{NoCache: true})
 	groups := []testGroupsModelToMap{
 		{
 			Id:   1,
@@ -324,9 +324,9 @@ func TestRegister(t *testing.T) {
 	PurgeWeaves()
 	m1 := Use[testModel]()
 	m2 := Use[testModel]()
-	m3 := Use[testModel](WeaveConfig{Table: "testmodelwithconfig"})
-	m4 := Use[testModel](WeaveConfig{NoCache: true})
-	m5 := Use[testModel](WeaveConfig{NoCache: true})
+	m3 := UseWith[testModel](WeaveConfig{Table: "testmodelwithconfig"})
+	m4 := UseWith[testModel](WeaveConfig{NoCache: true})
+	m5 := UseWith[testModel](WeaveConfig{NoCache: true})
 	if m1 == m3 || m2 == m3 {
 		t.Errorf("Expected '%#v' to be different from '%#v' and '%#v'", m3, m1, m2)
 	}
@@ -339,6 +339,15 @@ func TestRegister(t *testing.T) {
 	if m4 == m5 {
 		t.Errorf("Expected '%#v' to be different from '%#v'", m4, m5)
 	}
+	if m1.Table != "testmodel" {
+		t.Errorf("Expected '%s' to be 'testmodel'", m1.Table)
+	}
+	if m3.Table != "testmodelwithconfig" {
+		t.Errorf("Expected '%s' to be 'testmodelwithconfig'", m3.Table)
+	}
+	if !m4.Config.NoCache {
+		t.Errorf("Expected '%#v' to be '%#v'", m4.Config.NoCache, true)
+	}
 }
 
 func TestScanToMap(t *testing.T) {
@@ -348,7 +357,7 @@ func TestScanToMap(t *testing.T) {
 		Name     string       `@:"name"`
 	}
 	defer PurgeWeaves()
-	accounts := Query[testAccounts](WeaveConfig{NoCache: true})
+	accounts := QueryWith[testAccounts](WeaveConfig{NoCache: true})
 
 	db, mock, err := sqlmock.New()
 	if err != nil {
@@ -409,7 +418,7 @@ func TestUse(t *testing.T) {
 		Accounts OneToMany[testAccounts] `@:"group_id"`
 	}
 	defer PurgeWeaves()
-	groups := Use[testGroups](WeaveConfig{NoCache: true})
+	groups := UseWith[testGroups](WeaveConfig{NoCache: true})
 	columns := maps.Keys(groups.Fields)
 	sort.Strings(columns)
 	expectedColumns := []string{"Accounts", "id", "name"}

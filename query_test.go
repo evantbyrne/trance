@@ -18,7 +18,7 @@ func TestQueryConfigure(t *testing.T) {
 	defer PurgeWeaves()
 
 	PurgeWeaves()
-	query := Query[testModel](WeaveConfig{NoCache: true})
+	query := QueryWith[testModel](WeaveConfig{NoCache: true})
 	query.configure()
 	columns := maps.Keys(query.Config.Fields)
 	sort.Strings(columns)

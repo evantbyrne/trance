@@ -8,11 +8,11 @@ import (
 )
 
 type QueryViewStream[T any] struct {
-	Context      context.Context
-	Error        error
-	Query        *QueryStream[T]
-	View         *View
-	WeaveConfigs []WeaveConfig
+	Context     context.Context
+	Error       error
+	Query       *QueryStream[T]
+	View        *View
+	WeaveConfig WeaveConfig
 }
 
 func (stream *QueryViewStream[T]) Collect() (*QueryStream[T], *View, error) {

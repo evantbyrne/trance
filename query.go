@@ -37,19 +37,18 @@ type QueryConfig struct {
 }
 
 type QueryStream[T any] struct {
-	Config       QueryConfig
-	Error        error
-	Weave        *Weave[T]
-	WeaveConfigs []WeaveConfig
-	Rows         *sql.Rows
+	Config QueryConfig
+	Error  error
+	Weave  *Weave[T]
+	Rows   *sql.Rows
 
 	dialect Dialect
 }
 
 func (query *QueryStream[T]) All() *WeaveListStreamer[T] {
 	result := &WeaveListStreamer[T]{
-		Error:        query.Error,
-		WeaveConfigs: query.WeaveConfigs,
+		Error:       query.Error,
+		WeaveConfig: query.Weave.Config,
 	}
 	if result.Error != nil {
 		return result
@@ -220,8 +219,8 @@ func (query *QueryStream[T]) dbQuery(db *sql.DB, queryString string, args ...any
 
 func (query *QueryStream[T]) Delete() *QueryResultStreamer[T] {
 	result := &QueryResultStreamer[T]{
-		Error:        query.Error,
-		WeaveConfigs: query.WeaveConfigs,
+		Error:       query.Error,
+		WeaveConfig: query.Weave.Config,
 	}
 	if result.Error != nil {
 		return result
@@ -365,8 +364,8 @@ func (query *QueryStream[T]) FilterOr(clauses ...any) *QueryStream[T] {
 
 func (query *QueryStream[T]) First() *WeaveStreamer[T] {
 	result := &WeaveStreamer[T]{
-		Error:        query.Error,
-		WeaveConfigs: query.WeaveConfigs,
+		Error:       query.Error,
+		WeaveConfig: query.Weave.Config,
 	}
 	if result.Error != nil {
 		return result
@@ -455,9 +454,9 @@ func (query *QueryStream[T]) FirstToMap() *MapStream {
 
 func (query *QueryStream[T]) Insert(row *T) *QueryResultStreamer[T] {
 	result := &QueryResultStreamer[T]{
-		Error:        query.Error,
-		Value:        row,
-		WeaveConfigs: query.WeaveConfigs,
+		Error:       query.Error,
+		Value:       row,
+		WeaveConfig: query.Weave.Config,
 	}
 	if result.Error != nil {
 		return result
@@ -507,8 +506,8 @@ func (query *QueryStream[T]) Insert(row *T) *QueryResultStreamer[T] {
 
 func (query *QueryStream[T]) InsertMap(data map[string]any) *QueryResultStreamer[T] {
 	result := &QueryResultStreamer[T]{
-		Error:        query.Error,
-		WeaveConfigs: query.WeaveConfigs,
+		Error:       query.Error,
+		WeaveConfig: query.Weave.Config,
 	}
 	result.Value, _ = query.Weave.ScanMap(data)
 	if result.Error != nil {
@@ -767,8 +766,8 @@ func (query *QueryStream[T]) Sort(columns ...string) *QueryStream[T] {
 
 func (query *QueryStream[T]) SqlAll(sql string, args ...any) *WeaveListStreamer[T] {
 	result := &WeaveListStreamer[T]{
-		Error:        query.Error,
-		WeaveConfigs: query.WeaveConfigs,
+		Error:       query.Error,
+		WeaveConfig: query.Weave.Config,
 	}
 	if result.Error != nil {
 		return result
@@ -833,8 +832,8 @@ func (query QueryStream[T]) StringWithArgs(dialect Dialect, args []any) (string,
 
 func (query *QueryStream[T]) TableColumnAdd(column string) *QueryResultStreamer[T] {
 	result := &QueryResultStreamer[T]{
-		Error:        query.Error,
-		WeaveConfigs: query.WeaveConfigs,
+		Error:       query.Error,
+		WeaveConfig: query.Weave.Config,
 	}
 	if result.Error != nil {
 		return result
@@ -858,8 +857,8 @@ func (query *QueryStream[T]) TableColumnAdd(column string) *QueryResultStreamer[
 
 func (query *QueryStream[T]) TableColumnDrop(column string) *QueryResultStreamer[T] {
 	result := &QueryResultStreamer[T]{
-		Error:        query.Error,
-		WeaveConfigs: query.WeaveConfigs,
+		Error:       query.Error,
+		WeaveConfig: query.Weave.Config,
 	}
 	if result.Error != nil {
 		return result
@@ -883,8 +882,8 @@ func (query *QueryStream[T]) TableColumnDrop(column string) *QueryResultStreamer
 
 func (query *QueryStream[T]) TableCreate(tableCreateConfig ...TableCreateConfig) *QueryResultStreamer[T] {
 	result := &QueryResultStreamer[T]{
-		Error:        query.Error,
-		WeaveConfigs: query.WeaveConfigs,
+		Error:       query.Error,
+		WeaveConfig: query.Weave.Config,
 	}
 	if result.Error != nil {
 		return result
@@ -912,8 +911,8 @@ func (query *QueryStream[T]) TableCreate(tableCreateConfig ...TableCreateConfig)
 
 func (query *QueryStream[T]) TableDrop(tableDropConfig ...TableDropConfig) *QueryResultStreamer[T] {
 	result := &QueryResultStreamer[T]{
-		Error:        query.Error,
-		WeaveConfigs: query.WeaveConfigs,
+		Error:       query.Error,
+		WeaveConfig: query.Weave.Config,
 	}
 	if result.Error != nil {
 		return result
@@ -946,9 +945,9 @@ func (query *QueryStream[T]) Transaction(transaction *sql.Tx) *QueryStream[T] {
 
 func (query *QueryStream[T]) Update(row *T, columns ...string) *QueryResultStreamer[T] {
 	result := &QueryResultStreamer[T]{
-		Error:        query.Error,
-		Value:        row,
-		WeaveConfigs: query.WeaveConfigs,
+		Error:       query.Error,
+		Value:       row,
+		WeaveConfig: query.Weave.Config,
 	}
 	if result.Error != nil {
 		return result
@@ -984,8 +983,8 @@ func (query *QueryStream[T]) Update(row *T, columns ...string) *QueryResultStrea
 
 func (query *QueryStream[T]) UpdateMap(data map[string]any) *QueryResultStreamer[T] {
 	result := &QueryResultStreamer[T]{
-		Error:        query.Error,
-		WeaveConfigs: query.WeaveConfigs,
+		Error:       query.Error,
+		WeaveConfig: query.Weave.Config,
 	}
 	result.Value, _ = query.Weave.ScanMap(data)
 	if result.Error != nil {
@@ -1021,10 +1020,10 @@ func (query *QueryStream[T]) UpdateMap(data map[string]any) *QueryResultStreamer
 
 func (query *QueryStream[T]) ViewSelect(ctx context.Context) *QueryViewStream[T] {
 	result := &QueryViewStream[T]{
-		Context:      ctx,
-		Error:        query.Error,
-		Query:        query,
-		WeaveConfigs: query.WeaveConfigs,
+		Context:     ctx,
+		Error:       query.Error,
+		Query:       query,
+		WeaveConfig: query.Weave.Config,
 	}
 	if result.Error != nil {
 		return result
@@ -1060,8 +1059,14 @@ func (err UseDatabaseError) Error() string {
 	return "trance: missing database connection. Register with `trance.UseDatabase(db *sql.DB)`"
 }
 
-func Query[T any](configs ...WeaveConfig) *QueryStream[T] {
+func Query[T any]() *QueryStream[T] {
 	return &QueryStream[T]{
-		Weave: Use[T](configs...),
+		Weave: Use[T](),
+	}
+}
+
+func QueryWith[T any](config WeaveConfig) *QueryStream[T] {
+	return &QueryStream[T]{
+		Weave: UseWith[T](config),
 	}
 }

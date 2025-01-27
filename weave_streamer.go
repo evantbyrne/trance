@@ -3,9 +3,9 @@ package trance
 import "context"
 
 type WeaveStreamer[T any] struct {
-	Error        error
-	Value        *T
-	WeaveConfigs []WeaveConfig
+	Error       error
+	Value       *T
+	WeaveConfig WeaveConfig
 }
 
 func (stream *WeaveStreamer[T]) Collect() (*T, error) {
@@ -17,7 +17,7 @@ func (stream *WeaveStreamer[T]) Guard(ctx context.Context) *MapStream {
 		Error: stream.Error,
 	}
 	if result.Error == nil {
-		result.Value, result.Error = Guard(ctx, stream.Value, stream.WeaveConfigs...)
+		result.Value, result.Error = Guard(ctx, stream.Value, stream.WeaveConfig)
 	}
 	return result
 }
@@ -27,7 +27,7 @@ func (stream *WeaveStreamer[T]) JSON() *JSONStreamer {
 		Error: stream.Error,
 	}
 	if result.Error == nil {
-		weave := Use[T](stream.WeaveConfigs...)
+		weave := UseWith[T](stream.WeaveConfig)
 		result.Value = weave.ToJsonMap(stream.Value)
 	}
 	return result

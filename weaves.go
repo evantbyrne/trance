@@ -15,6 +15,7 @@ import (
 )
 
 type Weave[T any] struct {
+	Config        WeaveConfig
 	Fields        map[string]reflect.StructField
 	PrimaryColumn string
 	PrimaryField  string
@@ -282,6 +283,10 @@ type WeaveConfig struct {
 	Table   string
 }
 
+type WeaveConfigurable interface {
+	WeaveConfig() WeaveConfig
+}
+
 var weavesCache = &sync.Map{}
 
 func PurgeWeaves() {
@@ -291,27 +296,36 @@ func PurgeWeaves() {
 	})
 }
 
-func Transform[From any, To any](from *From, toConfigs ...WeaveConfig) (*To, error) {
+func Transform[From any, To any](from *From) (*To, error) {
 	data, err := Use[From]().ToMap(from)
 	if err != nil {
 		return nil, err
 	}
-	return Use[To](toConfigs...).ScanMap(data)
+	return UseWith[To](WeaveConfig{}).ScanMap(data)
 }
 
-func Use[T any](configs ...WeaveConfig) *Weave[T] {
+func TransformWith[From any, To any](from *From, toConfig WeaveConfig) (*To, error) {
+	data, err := Use[From]().ToMap(from)
+	if err != nil {
+		return nil, err
+	}
+	return UseWith[To](toConfig).ScanMap(data)
+}
+
+func Use[T any]() *Weave[T] {
+	var model T
+	if weaveConfigurable, ok := any(model).(WeaveConfigurable); ok {
+		return UseWith[T](weaveConfigurable.WeaveConfig())
+	}
+	return UseWith[T](WeaveConfig{})
+}
+
+func UseWith[T any](config WeaveConfig) *Weave[T] {
 	var model T
 	modelType := reflect.TypeOf(model)
-	modelTypeStr := modelType.String()
-	noCache := false
-	for _, config := range configs {
-		modelTypeStr = fmt.Sprintf("%s%+v", modelTypeStr, config)
-		if config.NoCache {
-			noCache = true
-		}
-	}
+	modelTypeStr := fmt.Sprintf("%s%+v", modelType.String(), config)
 
-	if !noCache {
+	if !config.NoCache {
 		if existing, ok := weavesCache.Load(modelTypeStr); ok {
 			if weave, ok := existing.(*Weave[T]); ok {
 				return weave
@@ -337,30 +351,32 @@ func Use[T any](configs ...WeaveConfig) *Weave[T] {
 		}
 	}
 
-	table := strings.ToLower(modelType.Name())
-	for _, config := range configs {
-		if config.Table != "" {
-			table = config.Table
-		}
-	}
-
 	weave := &Weave[T]{
+		Config:        config,
 		Fields:        fields,
 		PrimaryColumn: primaryColumn,
 		PrimaryField:  primaryField,
-		Table:         table,
 		Type:          modelType,
 	}
-	if !noCache {
+	if config.Table == "" {
+		weave.Table = strings.ToLower(modelType.Name())
+	} else {
+		weave.Table = config.Table
+	}
+	if !config.NoCache {
 		weavesCache.Store(modelTypeStr, weave)
 	}
 	return weave
 }
 
-func ValidateTransform[From any, To any](r *http.Request, toConfigs ...WeaveConfig) (*To, error) {
+func ValidateTransform[From any, To any](r *http.Request) (*To, error) {
+	return ValidateTransformWith[From, To](r, WeaveConfig{})
+}
+
+func ValidateTransformWith[From any, To any](r *http.Request, toConfig WeaveConfig) (*To, error) {
 	from, err := Use[From]().Validate(r)
 	if err != nil {
 		return nil, err
 	}
-	return Transform[From, To](from, toConfigs...)
+	return TransformWith[From, To](from, toConfig)
 }

@@ -6,10 +6,10 @@ import (
 )
 
 type QueryResultStreamer[T any] struct {
-	Error        error
-	Result       sql.Result
-	Value        *T
-	WeaveConfigs []WeaveConfig
+	Error       error
+	Result      sql.Result
+	Value       *T
+	WeaveConfig WeaveConfig
 }
 
 func (stream *QueryResultStreamer[T]) Collect() (sql.Result, *T, error) {
@@ -21,7 +21,7 @@ func (stream *QueryResultStreamer[T]) Guard(ctx context.Context) *MapStream {
 		Error: stream.Error,
 	}
 	if result.Error == nil {
-		result.Value, result.Error = Guard(ctx, stream.Value, stream.WeaveConfigs...)
+		result.Value, result.Error = Guard(ctx, stream.Value, stream.WeaveConfig)
 	}
 	return result
 }
@@ -31,7 +31,7 @@ func (stream *QueryResultStreamer[T]) JSON() *JSONStreamer {
 		Error: stream.Error,
 	}
 	if result.Error == nil {
-		weave := Use[T](stream.WeaveConfigs...)
+		weave := UseWith[T](stream.WeaveConfig)
 		result.Value = weave.ToJsonMap(stream.Value)
 	}
 	return result
