@@ -20,7 +20,13 @@ func (dialect SqliteDialect) BuildDelete(config trance.QueryConfig) (string, []a
 	args := append([]any(nil), config.Params...)
 	var queryString strings.Builder
 	queryString.WriteString("DELETE FROM ")
-	queryString.WriteString(dialect.QuoteIdentifier(config.Table))
+
+	// TABLE
+	from, err := dialect.buildTable(config)
+	if err != nil {
+		return "", nil, err
+	}
+	queryString.WriteString(from)
 
 	// WHERE
 	where, args, err := dialect.buildWhere(config, args)
@@ -68,7 +74,14 @@ func (dialect SqliteDialect) BuildInsert(config trance.QueryConfig, rowMap map[s
 	var queryString strings.Builder
 
 	queryString.WriteString("INSERT INTO ")
-	queryString.WriteString(dialect.QuoteIdentifier(config.Table))
+
+	// TABLE
+	from, err := dialect.buildTable(config)
+	if err != nil {
+		return "", nil, err
+	}
+	queryString.WriteString(from)
+
 	queryString.WriteString(" (")
 	first := true
 	for _, column := range columns {
@@ -149,7 +162,13 @@ func (dialect SqliteDialect) BuildSelect(config trance.QueryConfig) (string, []a
 	} else {
 		queryString.WriteString("SELECT * FROM ")
 	}
-	queryString.WriteString(dialect.QuoteIdentifier(config.Table))
+
+	// TABLE
+	from, err := dialect.buildTable(config)
+	if err != nil {
+		return "", nil, err
+	}
+	queryString.WriteString(from)
 
 	// JOIN
 	joins, args, err := dialect.buildJoins(config, args)
@@ -203,7 +222,28 @@ func (dialect SqliteDialect) BuildSelect(config trance.QueryConfig) (string, []a
 	return queryString.String(), args, nil
 }
 
+func (dialect SqliteDialect) buildTable(config trance.QueryConfig) (string, error) {
+	switch tv := config.Table.(type) {
+	case string:
+		return dialect.QuoteIdentifier(tv), nil
+
+	case trance.DialectStringer:
+		return tv.StringForDialect(dialect), nil
+
+	case fmt.Stringer:
+		return tv.String(), nil
+
+	default:
+		return "", fmt.Errorf("trance: invalid table type %#v", config.Table)
+	}
+}
+
 func (dialect SqliteDialect) BuildTableColumnAdd(config trance.QueryConfig, column string) (string, error) {
+	table, err := dialect.buildTable(config)
+	if err != nil {
+		return "", err
+	}
+
 	field, ok := config.Fields[column]
 	if !ok {
 		return "", fmt.Errorf("trance: invalid column '%s' on model for table '%s'", column, config.Table)
@@ -213,11 +253,16 @@ func (dialect SqliteDialect) BuildTableColumnAdd(config trance.QueryConfig, colu
 	if err != nil {
 		return "", err
 	}
-	return fmt.Sprintf("ALTER TABLE %s ADD COLUMN %s %s", dialect.QuoteIdentifier(config.Table), dialect.QuoteIdentifier(column), columnType), nil
+	return fmt.Sprintf("ALTER TABLE %s ADD COLUMN %s %s", table, dialect.QuoteIdentifier(column), columnType), nil
 }
 
 func (dialect SqliteDialect) BuildTableColumnDrop(config trance.QueryConfig, column string) (string, error) {
-	return fmt.Sprintf("ALTER TABLE %s DROP COLUMN %s", dialect.QuoteIdentifier(config.Table), dialect.QuoteIdentifier(column)), nil
+	table, err := dialect.buildTable(config)
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("ALTER TABLE %s DROP COLUMN %s", table, dialect.QuoteIdentifier(column)), nil
 }
 
 func (dialect SqliteDialect) BuildTableCreate(config trance.QueryConfig, tableCreateConfig trance.TableCreateConfig) (string, error) {
@@ -226,7 +271,14 @@ func (dialect SqliteDialect) BuildTableCreate(config trance.QueryConfig, tableCr
 	if tableCreateConfig.IfNotExists {
 		sql.WriteString("IF NOT EXISTS ")
 	}
-	sql.WriteString(dialect.QuoteIdentifier(config.Table))
+
+	// TABLE
+	table, err := dialect.buildTable(config)
+	if err != nil {
+		return "", err
+	}
+	sql.WriteString(table)
+
 	sql.WriteString(" (")
 	fieldNames := maps.Keys(config.Fields)
 	sort.Strings(fieldNames)
@@ -255,7 +307,14 @@ func (dialect SqliteDialect) BuildTableDrop(config trance.QueryConfig, tableDrop
 	if tableDropConfig.IfExists {
 		queryString.WriteString("IF EXISTS ")
 	}
-	queryString.WriteString(dialect.QuoteIdentifier(config.Table))
+
+	// TABLE
+	from, err := dialect.buildTable(config)
+	if err != nil {
+		return "", err
+	}
+	queryString.WriteString(from)
+
 	return queryString.String(), nil
 }
 
@@ -264,7 +323,14 @@ func (dialect SqliteDialect) BuildUpdate(config trance.QueryConfig, rowMap map[s
 	var queryString strings.Builder
 
 	queryString.WriteString("UPDATE ")
-	queryString.WriteString(dialect.QuoteIdentifier(config.Table))
+
+	// TABLE
+	from, err := dialect.buildTable(config)
+	if err != nil {
+		return "", nil, err
+	}
+	queryString.WriteString(from)
+
 	queryString.WriteString(" SET ")
 
 	first := true

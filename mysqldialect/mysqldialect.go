@@ -18,7 +18,13 @@ func (dialect MysqlDialect) BuildDelete(config trance.QueryConfig) (string, []an
 	args := append([]any(nil), config.Params...)
 	var queryString strings.Builder
 	queryString.WriteString("DELETE FROM ")
-	queryString.WriteString(dialect.QuoteIdentifier(config.Table))
+
+	// TABLE
+	from, err := dialect.buildTable(config)
+	if err != nil {
+		return "", nil, err
+	}
+	queryString.WriteString(from)
 
 	// WHERE
 	where, args, err := dialect.buildWhere(config, args)
@@ -66,7 +72,14 @@ func (dialect MysqlDialect) BuildInsert(config trance.QueryConfig, rowMap map[st
 	var queryString strings.Builder
 
 	queryString.WriteString("INSERT INTO ")
-	queryString.WriteString(dialect.QuoteIdentifier(config.Table))
+
+	// TABLE
+	from, err := dialect.buildTable(config)
+	if err != nil {
+		return "", nil, err
+	}
+	queryString.WriteString(from)
+
 	queryString.WriteString(" (")
 	first := true
 	for _, column := range columns {
@@ -147,7 +160,13 @@ func (dialect MysqlDialect) BuildSelect(config trance.QueryConfig) (string, []an
 	} else {
 		queryString.WriteString("SELECT * FROM ")
 	}
-	queryString.WriteString(dialect.QuoteIdentifier(config.Table))
+
+	// TABLE
+	from, err := dialect.buildTable(config)
+	if err != nil {
+		return "", nil, err
+	}
+	queryString.WriteString(from)
 
 	// JOIN
 	joins, args, err := dialect.buildJoins(config, args)
@@ -201,6 +220,22 @@ func (dialect MysqlDialect) BuildSelect(config trance.QueryConfig) (string, []an
 	return queryString.String(), args, nil
 }
 
+func (dialect MysqlDialect) buildTable(config trance.QueryConfig) (string, error) {
+	switch tv := config.Table.(type) {
+	case string:
+		return dialect.QuoteIdentifier(tv), nil
+
+	case trance.DialectStringer:
+		return tv.StringForDialect(dialect), nil
+
+	case fmt.Stringer:
+		return tv.String(), nil
+
+	default:
+		return "", fmt.Errorf("trance: invalid table type %#v", config.Table)
+	}
+}
+
 func (dialect MysqlDialect) BuildTableColumnAdd(config trance.QueryConfig, column string) (string, error) {
 	field, ok := config.Fields[column]
 	if !ok {
@@ -211,11 +246,24 @@ func (dialect MysqlDialect) BuildTableColumnAdd(config trance.QueryConfig, colum
 	if err != nil {
 		return "", err
 	}
-	return fmt.Sprintf("ALTER TABLE %s ADD COLUMN %s %s", dialect.QuoteIdentifier(config.Table), dialect.QuoteIdentifier(column), columnType), nil
+
+	// TABLE
+	from, err := dialect.buildTable(config)
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("ALTER TABLE %s ADD COLUMN %s %s", from, dialect.QuoteIdentifier(column), columnType), nil
 }
 
 func (dialect MysqlDialect) BuildTableColumnDrop(config trance.QueryConfig, column string) (string, error) {
-	return fmt.Sprintf("ALTER TABLE %s DROP COLUMN %s", dialect.QuoteIdentifier(config.Table), dialect.QuoteIdentifier(column)), nil
+	// TABLE
+	from, err := dialect.buildTable(config)
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("ALTER TABLE %s DROP COLUMN %s", from, dialect.QuoteIdentifier(column)), nil
 }
 
 func (dialect MysqlDialect) BuildTableCreate(config trance.QueryConfig, tableCreateConfig trance.TableCreateConfig) (string, error) {
@@ -224,7 +272,14 @@ func (dialect MysqlDialect) BuildTableCreate(config trance.QueryConfig, tableCre
 	if tableCreateConfig.IfNotExists {
 		sql.WriteString("IF NOT EXISTS ")
 	}
-	sql.WriteString(dialect.QuoteIdentifier(config.Table))
+
+	// TABLE
+	from, err := dialect.buildTable(config)
+	if err != nil {
+		return "", err
+	}
+	sql.WriteString(from)
+
 	sql.WriteString(" (")
 	fieldNames := maps.Keys(config.Fields)
 	sort.Strings(fieldNames)
@@ -252,7 +307,14 @@ func (dialect MysqlDialect) BuildTableDrop(config trance.QueryConfig, tableDropC
 	if tableDropConfig.IfExists {
 		queryString.WriteString("IF EXISTS ")
 	}
-	queryString.WriteString(dialect.QuoteIdentifier(config.Table))
+
+	// TABLE
+	from, err := dialect.buildTable(config)
+	if err != nil {
+		return "", err
+	}
+	queryString.WriteString(from)
+
 	return queryString.String(), nil
 }
 
@@ -261,7 +323,14 @@ func (dialect MysqlDialect) BuildUpdate(config trance.QueryConfig, rowMap map[st
 	var queryString strings.Builder
 
 	queryString.WriteString("UPDATE ")
-	queryString.WriteString(dialect.QuoteIdentifier(config.Table))
+
+	// TABLE
+	from, err := dialect.buildTable(config)
+	if err != nil {
+		return "", nil, err
+	}
+	queryString.WriteString(from)
+
 	queryString.WriteString(" SET ")
 
 	first := true

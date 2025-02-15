@@ -32,7 +32,7 @@ type QueryConfig struct {
 	Params       []any
 	Selected     []any
 	Sort         []string
-	Table        string
+	Table        any
 	Transaction  *sql.Tx
 }
 
@@ -828,6 +828,14 @@ func (query QueryStream[T]) StringWithArgs(dialect Dialect, args []any) (string,
 	query.configure()
 	query.Config.Params = args
 	return query.dialect.BuildSelect(query.Config)
+}
+
+func (query *QueryStream[T]) Table(table any) *QueryStream[T] {
+	if query.Error != nil {
+		return query
+	}
+	query.Config.Table = table
+	return query
 }
 
 func (query *QueryStream[T]) TableColumnAdd(column string) *QueryResultStreamer[T] {

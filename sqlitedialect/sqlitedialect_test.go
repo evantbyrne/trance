@@ -555,3 +555,20 @@ func TestQuoteIdentifier(t *testing.T) {
 		}
 	}
 }
+
+func TestTable(t *testing.T) {
+	dialect := SqliteDialect{}
+	table1, _ := dialect.buildTable(trance.QueryConfig{Table: "foo"})
+	table2, _ := dialect.buildTable(trance.QueryConfig{Table: trance.Unsafe("pragma_table_info(?)")})
+	table3, _ := dialect.buildTable(trance.QueryConfig{Table: trance.As("foo", "bar")})
+	expected := map[string]string{
+		"`foo`":                table1,
+		"pragma_table_info(?)": table2,
+		"`foo` AS `bar`":       table3,
+	}
+	for expected, actual := range expected {
+		if expected != actual {
+			t.Errorf("Expected '%+v', got '%+v'", expected, actual)
+		}
+	}
+}
