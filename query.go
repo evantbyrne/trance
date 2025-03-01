@@ -135,7 +135,9 @@ func (query *QueryStream[T]) AllToMap() *MapListStream {
 
 func (query *QueryStream[T]) configure() {
 	query.Config.Fields = query.Weave.Fields
-	query.Config.Table = query.Weave.Table
+	if query.Config.Table == nil {
+		query.Config.Table = query.Weave.Table
+	}
 }
 
 func (query *QueryStream[T]) Context(context context.Context) *QueryStream[T] {
