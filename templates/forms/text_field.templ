@@ -1,0 +1,23 @@
+package forms
+
+templ TextField(fieldData FormTemplateDataField) {
+	{{ field := fieldData.FormData.FieldTypes[fieldData.Key] }}
+	{{ err := fieldData.FormData.Errors[fieldData.Key] }}
+	{{ value := fieldData.FormData.Values[fieldData.Key] }}
+	{{ label := field.Tag.Get("label") }}
+
+	<label for={ fieldData.Key }>
+		if label != "" {
+			{ label }
+		} else {
+			{ field.Name }
+		}
+	</label>
+	<input type="text" name={ fieldData.Key }
+		if value != nil {
+			value={ value.(string) }
+		} />
+	if err != nil {
+		<div class="error">{ err.Error() }</div>
+	}
+}

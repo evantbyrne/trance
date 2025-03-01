@@ -2,7 +2,10 @@ package trance
 
 import (
 	"encoding/json"
+	"fmt"
 	"reflect"
+
+	"github.com/evantbyrne/trance/templates/forms"
 )
 
 type ForeignKey[To any] struct {
@@ -37,6 +40,21 @@ func (fk *ForeignKey[To]) Weave() *Weave[To] {
 		fk.Row = &zero
 	}
 	return Use[To]()
+}
+
+func (fk ForeignKey[To]) WidgetOptions() ([]forms.WidgetOption, error) {
+	options := make([]forms.WidgetOption, 0)
+	weave := fk.Weave()
+
+	err := fk.Query().All().ForEach(func(_ int, value *To) error {
+		options = append(options, forms.WidgetOption{
+			Label: fmt.Sprint(value),
+			Value: weave.ToValuesMap(value)[weave.PrimaryColumn],
+		})
+		return nil
+	}).Error
+
+	return options, err
 }
 
 func (fk ForeignKey[To]) Query() *QueryStream[To] {
@@ -75,6 +93,22 @@ func (fk *NullForeignKey[To]) Weave() *Weave[To] {
 		fk.Row = &zero
 	}
 	return Use[To]()
+}
+
+func (fk NullForeignKey[To]) WidgetOptions() ([]forms.WidgetOption, error) {
+	options := make([]forms.WidgetOption, 0)
+	options = append(options, forms.WidgetOption{})
+	weave := fk.Weave()
+
+	err := fk.Query().All().ForEach(func(_ int, value *To) error {
+		options = append(options, forms.WidgetOption{
+			Label: fmt.Sprint(value),
+			Value: weave.ToValuesMap(value)[weave.PrimaryColumn],
+		})
+		return nil
+	}).Error
+
+	return options, err
 }
 
 func (fk NullForeignKey[To]) Query() *QueryStream[To] {

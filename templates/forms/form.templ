@@ -1,0 +1,56 @@
+package forms
+
+import (
+	"reflect"
+	"strings"
+)
+
+type FormTemplateData struct {
+	Action     string
+	Data       map[string]any
+	Errors     map[string]error
+	Fields     []string
+	FieldTypes map[string]reflect.StructField
+	Method     string
+	Values     map[string]any
+	ValuesMap  map[string]any
+	Widgets    map[string]Widgeter
+}
+
+func (ftd FormTemplateData) GetField(key string) FormTemplateDataField {
+	return FormTemplateDataField{
+		FormData: ftd,
+		Key:      key,
+	}
+}
+
+type FormTemplateDataField struct {
+	FormData   FormTemplateData
+	Key        string
+	WidgetData map[string]any
+}
+
+templ Form(formData FormTemplateData) {
+	<form
+		method={ formData.Method }
+		if formData.Action != "" {
+			action={ templ.URL(formData.Action) }
+		}>
+		for _, key := range formData.Fields {
+			{{ field := formData.FieldTypes[key] }}
+			{{ fieldType := field.Type.String() }}
+			{{ fieldData := formData.GetField(key) }}
+
+			if widget, ok := formData.Widgets[key]; ok {
+				@widget(fieldData)
+			} else if field.Tag.Get("@primary") == "true" {
+				@HiddenField(fieldData)
+			} else if strings.HasPrefix(fieldType, "trance.ForeignKey[") || strings.HasPrefix(fieldType, "trance.NullForeignKey[") {
+				@ForeignKeyField(fieldData)
+			} else {
+				@TextField(fieldData)
+			}
+		}
+		<button type="submit">Submit</button>
+	</form>
+}

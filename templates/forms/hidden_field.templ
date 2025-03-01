@@ -1,0 +1,11 @@
+package forms
+
+templ HiddenField(fieldData FormTemplateDataField) {
+	{{ value := fieldData.FormData.Values[fieldData.Key] }}
+	<input
+		name={ fieldData.Key }
+		type="hidden"
+		if value != nil {
+			value={ value.(string) }
+		} />
+}

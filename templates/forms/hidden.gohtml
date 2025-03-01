@@ -1,4 +1,0 @@
-{{- $field := index .FormData.FieldTypes .Key }}
-{{- $fieldType := $field.Type.String }}
-{{- $value := index .FormData.Values .Key }}
-<input type="hidden" name="{{ .Key }}" value="{{ $value }}">

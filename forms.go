@@ -1,44 +1,16 @@
 package trance
 
 import (
-	"bytes"
-	"context"
 	_ "embed"
 	"html/template"
-	"io"
 	"maps"
 	"net/http"
 	"reflect"
 	"slices"
-	"strings"
+
+	"github.com/a-h/templ"
+	"github.com/evantbyrne/trance/templates/forms"
 )
-
-//go:embed templates/forms/foreign_key.gohtml
-var FormForeignKeyHTML string
-
-//go:embed templates/forms/hidden.gohtml
-var FormHiddenHTML string
-
-//go:embed templates/forms/select.gohtml
-var FormSelectHTML string
-
-//go:embed templates/forms/text.gohtml
-var FormTextHTML string
-
-//go:embed templates/forms/form.gohtml
-var DefaultFormHTML string
-
-var defaultFormTpl = template.Must(
-	template.New("trance.form.render").
-		Funcs(template.FuncMap{"hasPrefix": strings.HasPrefix}).
-		Parse(DefaultFormHTML))
-
-func init() {
-	template.Must(defaultFormTpl.New("trance.form.foreign-key").Parse(FormForeignKeyHTML))
-	template.Must(defaultFormTpl.New("trance.form.hidden").Parse(FormHiddenHTML))
-	template.Must(defaultFormTpl.New("trance.form.select").Parse(FormSelectHTML))
-	template.Must(defaultFormTpl.New("trance.form.text").Parse(FormTextHTML))
-}
 
 type Form[T any] struct {
 	Action   string
@@ -48,9 +20,10 @@ type Form[T any] struct {
 	Template *template.Template
 	Value    *T
 	Weave    *Weave[T]
+	Widgets  map[string]forms.Widgeter
 }
 
-func (form *Form[T]) Render(writer io.Writer, additionalData ...map[string]any) error {
+func (form *Form[T]) Component(additionalData ...map[string]any) templ.Component {
 	if form.Weave == nil {
 		form.Weave = Use[T]()
 	}
@@ -77,7 +50,7 @@ func (form *Form[T]) Render(writer io.Writer, additionalData ...map[string]any) 
 		}
 	}
 
-	data := FormTemplateData{
+	data := forms.FormTemplateData{
 		Action:     form.Action,
 		Data:       make(map[string]any),
 		Errors:     errorsMap,
@@ -86,22 +59,13 @@ func (form *Form[T]) Render(writer io.Writer, additionalData ...map[string]any) 
 		Method:     form.Method,
 		Values:     form.Weave.ToJsonMap(form.Value),
 		ValuesMap:  form.Weave.ToValuesMap(form.Value),
+		Widgets:    form.Widgets,
 	}
 	for _, n := range additionalData {
 		maps.Copy(data.Data, n)
 	}
 
-	if widgeter, ok := any(form.Value).(FormWidgeter); ok {
-		// TODO: Context
-		data.Widgets = widgeter.FormWidgets(context.Background())
-	} else {
-		data.Widgets = make(map[string]FormWidget, 0)
-	}
-
-	if form.Template == nil {
-		form.Template = defaultFormTpl
-	}
-	return form.Template.Execute(writer, data)
+	return forms.Form(data)
 }
 
 func (form *Form[T]) Validate(request *http.Request) bool {
@@ -138,37 +102,4 @@ func (form *Form[T]) Validate(request *http.Request) bool {
 	}
 
 	return form.Error == nil
-}
-
-type FormTemplateData struct {
-	Action     string
-	Data       map[string]any
-	Errors     map[string]error
-	Fields     []string
-	FieldTypes map[string]reflect.StructField
-	Method     string
-	Values     map[string]any
-	ValuesMap  map[string]any
-	Widgets    map[string]FormWidget
-}
-
-func (ftd FormTemplateData) GetField(key string) FormTemplateDataField {
-	return FormTemplateDataField{
-		FormData: ftd,
-		Key:      key,
-	}
-}
-
-type FormTemplateDataField struct {
-	FormData   FormTemplateData
-	Key        string
-	WidgetData map[string]any
-}
-
-func (field FormTemplateDataField) RenderWidget(widget FormWidget) template.HTML {
-	writer := new(bytes.Buffer)
-	if err := widget.Render(field, writer); err != nil {
-		panic(err)
-	}
-	return template.HTML(writer.String())
 }

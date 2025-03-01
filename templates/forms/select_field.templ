@@ -1,0 +1,33 @@
+package forms
+
+templ SelectField(fieldData FormTemplateDataField) {
+	{{ field := fieldData.FormData.FieldTypes[fieldData.Key] }}
+	{{ err := fieldData.FormData.Errors[fieldData.Key] }}
+	{{ value := fieldData.FormData.Values[fieldData.Key] }}
+	{{ label := field.Tag.Get("label") }}
+
+	<label for={ fieldData.Key }>
+		if label != "" {
+			{ label }
+		} else {
+			{ field.Name }
+		}
+	</label>
+	<select name={ fieldData.Key }>
+		for optLabel, optValue := range fieldData.WidgetData {
+			<option
+				if optValue != nil {
+					value={ optValue.(string) }
+				} else {
+					value=""
+				}
+				selected?={ optValue == value }
+				>
+					{ optLabel }
+			</option>
+		}
+	</select>
+	if err != nil {
+		<div class="error">{ err.Error() }</div>
+	}
+}

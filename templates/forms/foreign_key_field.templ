@@ -1,0 +1,42 @@
+package forms
+
+import "fmt"
+
+templ ForeignKeyField(fieldData FormTemplateDataField) {
+	{{ field := fieldData.FormData.FieldTypes[fieldData.Key] }}
+	{{ err := fieldData.FormData.Errors[fieldData.Key] }}
+	{{ value := fieldData.FormData.Values[fieldData.Key] }}
+	{{ label := field.Tag.Get("label") }}
+	{{ vv := fieldData.FormData.ValuesMap[fieldData.Key] }}
+	{{ widgetOptioner, _ := vv.(WidgetOptioner) }}
+	{{ widgetOptions, _ := widgetOptioner.WidgetOptions() }}
+
+	<label for={ fieldData.Key }>
+		if label != "" {
+			{ label }
+		} else {
+			{ field.Name }
+		}
+	</label>
+	<select name={ fieldData.Key }>
+		for _, widgetOption := range widgetOptions {
+			<option
+				if widgetOption.Value != nil {
+					value={ fmt.Sprint(widgetOption.Value) }
+				} else {
+					value=""
+				}
+				selected?={ fmt.Sprint(widgetOption.Value) == fmt.Sprint(value) }
+				>
+					if widgetOption.Label == "" {
+						-- select --
+					} else {
+						{ widgetOption.Label }
+					}
+			</option>
+		}
+	</select>
+	if err != nil {
+		<div class="error">{ err.Error() }</div>
+	}
+}
