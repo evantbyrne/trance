@@ -282,6 +282,7 @@ func (query *QueryStream[T]) Exists() (bool, error) {
 	if err != nil {
 		return false, err
 	}
+	defer rows.Close()
 	return rows.Next(), nil
 }
 
