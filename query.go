@@ -45,6 +45,15 @@ type QueryStream[T any] struct {
 	dialect Dialect
 }
 
+func (query *QueryStream[T]) Clone() *QueryStream[T] {
+	return &QueryStream[T]{
+		Error:   query.Error,
+		Config:  query.Config,
+		Weave:   query.Weave,
+		dialect: query.dialect,
+	}
+}
+
 func (query *QueryStream[T]) All() *WeaveListStreamer[T] {
 	result := &WeaveListStreamer[T]{
 		Error:       query.Error,
@@ -148,8 +157,8 @@ func (query *QueryStream[T]) Context(context context.Context) *QueryStream[T] {
 	return query
 }
 
-func (query *QueryStream[T]) Count() (uint, error) {
-	var count uint
+func (query *QueryStream[T]) Count() (uint64, error) {
+	var count uint64
 
 	db := Database()
 	if db == nil {
