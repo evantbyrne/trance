@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"reflect"
+	"slices"
 	"strings"
 
 	"golang.org/x/exp/maps"
@@ -622,6 +623,66 @@ func (query *QueryStream[T]) Offset(offset any) *QueryStream[T] {
 		query.Config.Offset = offset
 	}
 	return query
+}
+
+func (query *QueryStream[T]) Page(direction SortDirection, limit uint64, reverse bool, value any) *Page[T] {
+	page := &Page[T]{
+		Column:      query.Weave.PrimaryColumn,
+		Direction:   direction,
+		Error:       query.Error,
+		Limit:       limit,
+		WeaveConfig: query.Weave.Config,
+	}
+	if query.Error != nil {
+		return page
+	}
+
+	if page.TotalSize, page.Error = query.Clone().Count(); page.Error != nil {
+		return page
+	}
+
+	hasPreviousQuery := query.Clone()
+	hasNextQuery := query.Clone()
+
+	query = query.Limit(limit)
+	if value != nil && value != "" {
+		query = query.Filter(query.Weave.PrimaryColumn, Ternary((direction == DESC) != reverse, "<", ">"), value)
+	}
+
+	page.Stream = query.Sort(Ternary((direction == DESC) != reverse, "-"+query.Weave.PrimaryColumn, query.Weave.PrimaryColumn)).
+		All().
+		Then(func(rows []*T) error {
+			if rows == nil {
+				return nil
+			}
+			if len(rows) > 0 {
+				if reverse {
+					slices.Reverse(rows)
+				}
+				firstRow := rows[0]
+				firstValue := reflect.ValueOf(firstRow).Elem()
+				page.First = firstRow
+				page.FirstValue = firstValue.FieldByName(query.Weave.PrimaryField).Interface()
+				hasPrevious, err := hasPreviousQuery.Filter(query.Weave.PrimaryColumn, Ternary(direction == DESC, ">", "<"), page.FirstValue).Exists()
+				if err != nil {
+					return err
+				}
+				page.HasPrevious = hasPrevious
+
+				lastRow := rows[len(rows)-1]
+				lastValue := reflect.ValueOf(lastRow).Elem()
+				page.Last = lastRow
+				page.LastValue = lastValue.FieldByName(query.Weave.PrimaryField).Interface()
+				hasNext, err := hasNextQuery.Filter(query.Weave.PrimaryColumn, Ternary(direction == DESC, "<", ">"), page.LastValue).Exists()
+				if err != nil {
+					return err
+				}
+				page.HasNext = hasNext
+			}
+			return nil
+		})
+
+	return page
 }
 
 func (query *QueryStream[T]) Scan(rows *sql.Rows) (*T, error) {
