@@ -34,6 +34,13 @@ func (fk ForeignKey[To]) MarshalJSON() ([]byte, error) {
 	return json.Marshal(fk.Weave().ToJsonMap(fk.Row))
 }
 
+func (fk ForeignKey[To]) String() string {
+	if !fk.Valid {
+		return ""
+	}
+	return fmt.Sprint(fk.Row)
+}
+
 func (fk *ForeignKey[To]) Weave() *Weave[To] {
 	if fk.Row == nil {
 		var zero To
@@ -85,6 +92,13 @@ func (fk NullForeignKey[To]) MarshalJSON() ([]byte, error) {
 		return json.Marshal(nil)
 	}
 	return json.Marshal(fk.Weave().ToJsonMap(fk.Row))
+}
+
+func (fk NullForeignKey[To]) String() string {
+	if !fk.Valid {
+		return ""
+	}
+	return fmt.Sprint(fk.Row)
 }
 
 func (fk *NullForeignKey[To]) Weave() *Weave[To] {
